@@ -51,9 +51,9 @@ for month in MONTHS:
                     centos_announcement_link_list.append(YEAR + '-' + month + '/' + link['href'])
 
 release_dates = {}
-counter = 0
+# counter = 0
 for link in centos_announcement_link_list:
-    counter = counter + 1
+#     counter = counter + 1
     centos_name = ''
     centos_date = ''
     rhel_date = ''
