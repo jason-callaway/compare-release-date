@@ -9,6 +9,7 @@ import xmlrpclib
 import urllib
 import re
 import StringIO
+from datetime import datetime
 from lxml import etree, html
 from BeautifulSoup import BeautifulSoup
 
@@ -49,8 +50,10 @@ for month in MONTHS:
                     # And build the year-month/link string
                     centos_announcement_link_list.append(YEAR + '-' + month + '/' + link['href'])
 
-release_dates = {}                    
+release_dates = {}
+counter = 0
 for link in centos_announcement_link_list:
+    counter = counter + 1
     centos_name = ''
     centos_date = ''
     rhel_date = ''
@@ -75,9 +78,18 @@ for link in centos_announcement_link_list:
             date = rows.findAll('td')[0].string
             rhel_date = date
     release_dates[centos_name] = [centos_date, rhel_date]
-    print '\n' + centos_name + ':'
-    print release_dates[centos_name]
+#     print '\n' + centos_name + ':'
+#     print release_dates[centos_name]
+#     if counter > 10:
+#         break
     
 # print 'centos_announcement [centos_date, rhel_date]'
-# for key in release_dates:
-#     print key + ' ' + release_dates[key]
+for key in release_dates:
+    centos_date = release_dates[key][0]
+    rhel_date = release_dates[key][1]
+    c = datetime.strptime(centos_date, '%a %b %d %H:%M:%S UTC %Y')
+    r = datetime.strptime(rhel_date, '%Y-%m-%d')
+    delta = c - r
+    print key + ' delta: ' + str(delta)
+    
+    
