@@ -13,14 +13,18 @@ from datetime import datetime
 from lxml import etree, html
 from BeautifulSoup import BeautifulSoup
 
+# We could modify this to use local versions of centos-announce, and talk to a 
+# local Satellite via the XML-RPC API, which would make it run much faster, but 
+# for now this is good.
 RHN_ERRATA = 'https://rhn.redhat.com/errata/'
 CENTOS_ANNOUNCE = 'http://lists.centos.org/pipermail/centos-announce/'
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
           'August', 'September', 'October', 'November', 'December']
 
-# TODO: Paramaterize this later
-YEAR = '2013'
+#TODO: Parameterize this later.
+# For now, just edit the year 
+YEAR = '2012'
 
 def get_pretty_html(url):
     html_handler = urllib.urlopen(url)
@@ -51,13 +55,18 @@ for month in MONTHS:
                     centos_announcement_link_list.append(YEAR + '-' + month + '/' + link['href'])
 
 release_dates = {}
-# counter = 0
+# Now iterate over the list of CentOS announcements
 for link in centos_announcement_link_list:
-#     counter = counter + 1
+    # Just in case an interation fails (there are some bugs), zero out the 
+    # strings we use for matching
     centos_name = ''
     centos_date = ''
     rhel_date = ''
+    
+    # Get the announcement
     centos_announcement = get_pretty_html(CENTOS_ANNOUNCE + link)
+    # The is the slow part.  For each line in the html document, do a bunch
+    # of pattern matching
     for line in StringIO.StringIO(centos_announcement):
         regex = re.compile(r'<title> \[CentOS-announce\] CE[S|E|A]A-\d{4}:\d{4}')
         if regex.search(line):
@@ -69,6 +78,9 @@ for link in centos_announcement_link_list:
             centos_date = date_time
         match = re.search(r'rhn.redhat.com', line)
         if match:
+            # Ok, now we've found the RHN announcement.  Let's get that and
+            # parse it, which is a little easier since it's HTML and not a 
+            # list announcement
             soup = BeautifulSoup(line)
             links = soup.findAll('a')
             rhel_announcement = get_pretty_html(links[0]['href'])
@@ -77,19 +89,30 @@ for link in centos_announcement_link_list:
             rows = table.findAll('tr')[3]
             date = rows.findAll('td')[0].string
             rhel_date = date
+    
+    # If you want to watch progress, leave these lines uncommented.
     release_dates[centos_name] = [centos_date, rhel_date]
-#     print '\n' + centos_name + ':'
-#     print release_dates[centos_name]
-#     if counter > 10:
-#         break
+    print '\n' + centos_name + ':'
+    print release_dates[centos_name]
     
 # print 'centos_announcement [centos_date, rhel_date]'
 for key in release_dates:
-    centos_date = release_dates[key][0]
-    rhel_date = release_dates[key][1]
-    c = datetime.strptime(centos_date, '%a %b %d %H:%M:%S UTC %Y')
-    r = datetime.strptime(rhel_date, '%Y-%m-%d')
-    delta = c - r
-    print key + ' delta: ' + str(delta)
-    
+    try:
+        centos_date = release_dates[key][0]
+        rhel_date = release_dates[key][1]
+    except:
+        print "---FAILED ON release_dates:" + key
+    if rhel_date:
+        try:    
+            c = datetime.strptime(centos_date, '%a %b %d %H:%M:%S UTC %Y')
+            r = datetime.strptime(rhel_date, '%Y-%m-%d')
+        except:
+            print "---FAILED ON strptime:" + key
+        try:    
+            delta = c - r
+            days = ((delta.total_seconds() / 60) / 60 ) / 24
+            print key + ' delta: ' + str(days)
+        except Exception, e:
+            print "---FAILED ON delta subtraction:" + key
+            print e    
     
