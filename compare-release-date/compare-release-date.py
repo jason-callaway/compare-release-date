@@ -14,7 +14,8 @@ from datetime import datetime
 from lxml import etree, html
 from BeautifulSoup import BeautifulSoup
 
-# or, e.g. script.main(['-v', 'file.txt']), etc
+# To run:
+#   python compare-release-date YEAR1 [YEAR2] [YEAR3 etc...]
 # We could modify this to use local versions of centos-announce, and talk to a
 # local Satellite via the XML-RPC API, which would make it run much faster, but
 # for now this is good.
